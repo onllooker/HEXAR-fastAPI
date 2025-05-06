@@ -1,0 +1,177 @@
+from fastapi import FastAPI, Query, HTTPException, Depends
+from pydantic import BaseModel
+import logging
+from database import async_engine, SessionDep
+from db_models import *
+from sqlalchemy import select
+from sql_models import *
+
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title='Reactor Monitoring System')
+
+
+# Модели для FastAPI (Pydantic)
+class SynthesisCreate(BaseModel):
+    id: int
+    name: str
+    start_time: str
+    end_time: str
+    status: str
+    temperature: int
+
+
+class AlarmCreate(BaseModel):
+    id: int
+    message: str
+    timestamp: str
+
+
+# Получение всех синтезов
+@app.get("/syntheses/", response_model=list[SynthesisCreate])
+def get_syntheses():
+    try:
+        return ...
+    except Exception as e:
+        logger.error(f"Error fetching syntheses: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching syntheses")
+
+
+# Создание нового синтеза
+@app.post("/syntheses/")
+def create_synthesis(synthesis: SynthesisCreate) -> SynthesisCreate:
+    try:
+        logger.info(f"Synthesis {synthesis.id} created successfully")
+        return synthesis
+    except Exception as e:
+        logger.error(f"Error creating synthesis: {e}")
+        raise HTTPException(status_code=500, detail="Error creating synthesis")
+
+
+# Получение всех аварий
+@app.get("/alarms/", response_model=list[AlarmCreate])
+def get_alarms():
+    try:
+        return ...
+    except Exception as e:
+        logger.error(f"Error fetching alarms: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching alarms")
+
+
+# Создание новой аварии
+@app.post("/alarms/", response_model=AlarmCreate)
+def create_alarm(alarm: AlarmCreate):
+    try:
+        logger.info(f"Alarm {alarm.id} created successfully")
+        return alarm
+    except Exception as e:
+        logger.error(f"Error creating alarm: {e}")
+        raise HTTPException(status_code=500, detail="Error creating alarm")
+
+
+# Команды для управления синтезом
+@app.post("/control/start/")
+def start_synthesis():
+    try:
+        logger.info("Starting synthesis process...")
+        return {"message": "Synthesis started successfully"}
+    except Exception as e:
+        logger.error(f"Error starting synthesis: {e}")
+        raise HTTPException(status_code=500, detail="Error starting synthesis")
+
+
+@app.post("/control/stop/")
+def stop_synthesis():
+    try:
+        logger.info("Stopping synthesis process...")
+        return {"message": "Synthesis stopped successfully"}
+    except Exception as e:
+        logger.error(f"Error stopping synthesis: {e}")
+        raise HTTPException(status_code=500, detail="Error stopping synthesis")
+
+
+# Эндпоинты для получения текущих параметров
+@app.get("/status/")
+def get_current_status():
+    try:
+        # Пример статуса синтеза
+        return {"status": "Running", "temperature": 75}
+    except Exception as e:
+        logger.error(f"Error fetching current status: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching current status")
+
+
+# Эндпоинт для получения аварий по критериям
+@app.get("/alarms/{severity_level}", response_model=list[AlarmCreate])
+def get_alarms_by_severity(severity_level: str):
+    try:
+        # Пример фильтрации по критичности
+        return ...
+    except Exception as e:
+        logger.error(f"Error fetching alarms: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching alarms")
+
+
+@app.on_event("startup")
+async def on_startup():
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+@app.post("/make_new_synthesis")
+async def make_new_synthesis():
+    """Make a new table for synthesis template"""
+    return {"message": "i am alive"}
+
+
+@app.post("/add_substance", summary='Add substances description', tags=['Substances routs'])
+async def add_substance(data: SubstanceScheme, session: SessionDep):
+    try:
+        new_category = SubstanceCategoryORM(
+            category_name="test_category"
+        )
+
+        substance1 = SubstancesORM(
+            name=data.name,
+            weight=data.weight
+        )
+        session.add(substance1)
+        session.add(new_category)
+        await session.commit()
+    except:
+        return {"message": "Fail commit!"}
+    finally:
+        return {"message": "Success commit!"}
+
+
+@app.get("/get_substance/{test_}", summary='Get substances description', tags=['Substances routs'])
+async def get_substance(session: SessionDep):
+    try:
+        query = select(SubstancesORM)
+        res = await session.execute(query)
+        return res.scalars().all()
+    except:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/add_substance_category", summary="Add new category", tags=["Categories rout"])
+async def add_substance_category(session: SessionDep):
+    try:
+        new_category = SubstanceCategoryORM(
+            category_name='test'
+        )
+        session.add(new_category)
+        await session.commit()
+    except:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.get("/get_substance_category", summary="Get all categories", tags=["Categories rout"])
+async def get_substance_category(session: SessionDep):
+    try:
+        query = select(SubstanceCategoryORM)
+        res = await session.execute(query)
+        return res.scalars().all()
+    except:
+        raise HTTPException(status_code=500, detail="Internal server error")
