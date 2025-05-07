@@ -128,32 +128,33 @@ async def make_new_synthesis():
 
 
 @app.post("/add_substance", summary='Add substances description', tags=['Substances routs'])
-async def add_substance(data: SubstanceScheme, session: SessionDep):
+async def add_substance(substance: SubstanceCreateScheme, session: SessionDep):
     try:
-        new_category = SubstanceCategoryORM(
-            category_name="test_category"
+        result = await session.execute(
+            select(SubstanceCategoryORM).where(SubstanceCategoryORM.id == substance.category_id)
         )
-
-        substance1 = SubstancesORM(
-            name=data.name,
-            weight=data.weight
+        substance_category = result.scalars().first()
+        if not substance_category:
+            raise HTTPException(status_code=404, detail="Class not found")
+        new_substance = SubstancesORM(
+            name=substance.name,
+            weight=substance.weight,
+            category_id=substance.category_id
         )
-        session.add(substance1)
-        session.add(new_category)
+        session.add(new_substance)
         await session.commit()
     except:
         return {"message": "Fail commit!"}
-    finally:
-        return {"message": "Success commit!"}
 
 
-@app.get("/get_substance/{test_}", summary='Get substances description', tags=['Substances routs'])
+@app.get("/get_substance/", summary='Get substances description', tags=['Substances routs'])
 async def get_substance(session: SessionDep):
     try:
         query = select(SubstancesORM)
         res = await session.execute(query)
         return res.scalars().all()
     except:
+        await session.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/add_substance_category", summary="Add new category", tags=["Categories rout"])
@@ -169,7 +170,7 @@ async def add_substance_category(scheme: SubstanceCategoryCreateScheme, session:
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/get_substance_category", summary="Get all categories", tags=["Categories rout"])
-async def get_substance_category(scheme: SubstanceCategoryScheme, session: SessionDep):
+async def get_substance_category(session: SessionDep):
     try:
         query = select(SubstanceCategoryORM)
         res = await session.execute(query)

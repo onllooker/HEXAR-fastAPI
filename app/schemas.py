@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 
-class SubstanceCrearteScheme(BaseModel):
+class SubstanceCreateScheme(BaseModel):
     name: str
     weight: float
+    category_id: int
 
-class SubstanceScheme(SubstanceCrearteScheme):
+class SubstanceScheme(SubstanceCreateScheme):
     id: int
 
 
