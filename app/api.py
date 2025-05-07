@@ -4,7 +4,7 @@ import logging
 from database import async_engine, SessionDep
 from db_models import *
 from sqlalchemy import select
-from sql_models import *
+from schemas import *
 
 
 # Настройка логирования
@@ -157,10 +157,11 @@ async def get_substance(session: SessionDep):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/add_substance_category", summary="Add new category", tags=["Categories rout"])
-async def add_substance_category(session: SessionDep):
+async def add_substance_category(scheme: SubstanceCategoryCreateScheme, session: SessionDep):
     try:
         new_category = SubstanceCategoryORM(
-            category_name='test'
+            category_name=scheme.category_name,
+            description=scheme.description
         )
         session.add(new_category)
         await session.commit()
@@ -168,7 +169,7 @@ async def add_substance_category(session: SessionDep):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/get_substance_category", summary="Get all categories", tags=["Categories rout"])
-async def get_substance_category(session: SessionDep):
+async def get_substance_category(scheme: SubstanceCategoryScheme, session: SessionDep):
     try:
         query = select(SubstanceCategoryORM)
         res = await session.execute(query)
