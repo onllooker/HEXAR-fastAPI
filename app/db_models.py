@@ -30,7 +30,7 @@ class Substances_SynthesesORM(Base):
     __tablename__ = 'synthesis_recipe'
 
     synthesis_id: Mapped[int] = mapped_column(ForeignKey('syntheses.id'), primary_key=True)
-    substance_id: Mapped[int] = mapped_column(ForeignKey('substance.id'), primary_key=True)
+    substance_id: Mapped[int] = mapped_column(ForeignKey('substances.id'), primary_key=True)
     percentage: Mapped[int]
 
     syntheses: Mapped["SynthesesORM"] = relationship(back_populates='syntheses_associations')
@@ -42,7 +42,7 @@ class SynthesesORM(Base):
     name:Mapped[str] = mapped_column(unique=True)
     discription:Mapped[str]
 
-    substances = relationship(secondary="synthesis_recipe", back_populates='synthesis')
+    substances: Mapped[list["SubstancesORM"]] = relationship(secondary="synthesis_recipe", back_populates="syntheses")
     substance_associations: Mapped[list["Substunces_SynthesesORM"]] = relationship(back_populates="syntheses")
 
 class SubstancesORM(Base):
@@ -50,7 +50,7 @@ class SubstancesORM(Base):
 
     name: Mapped[str] = mapped_column(unique=True)
     weight: Mapped[float]
-    category_id: Mapped[str] = mapped_column(ForeignKey("substance_category.id"))
+    category_id: Mapped[int] = mapped_column(ForeignKey("substance_category.id"))
 
     category: Mapped["SubstanceCategoryORM"] = relationship(back_populates="substances")
     synthesis = relationship(secondary="synthesis_recipe", back_populates='substances')
