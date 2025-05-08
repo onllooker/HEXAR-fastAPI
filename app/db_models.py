@@ -8,23 +8,9 @@ class Base(DeclarativeBase):
     id:Mapped[int] = mapped_column(primary_key=True)
 
 
-class SynthesesORM(Base):
-    __tablename__ = "syntheses"
-
-    name:Mapped[str] = mapped_column(unique=True)
-    discription:Mapped[str]
 
 class SensorDataORM(Base):
     __tablename__ = "sensordata"
-
-class SubstancesORM(Base):
-    __tablename__ = "substances"
-
-    name: Mapped[str] = mapped_column(unique=True)
-    weight: Mapped[float]
-    category_id: Mapped[str] = mapped_column(ForeignKey("substance_category.id"))
-
-    category: Mapped["SubstanceCategoryORM"] = relationship(back_populates="substances")
 
 
 class SubstanceCategoryORM(Base):
@@ -40,12 +26,32 @@ class SubstanceCategoryORM(Base):
         return f"<SubstanceCategory(id={self.id}, category_name='{self.category_name}')>"
 
 
-# class Substunces_SynthesesORM(Base):
-#     __tablename__ = 'synthesis_recipe'
-#
-#     synthesis_id: Mapped[int] = mapped_column(ForeignKey('syntheses.id'), nullable=False)
-#     substance_id: Mapped[int] = mapped_column(ForeignKey('substance.id'), nullable=False)
-#     percentage: Mapped[int]
-#     # Определяем отношения для доступа к синтезу и веществу
-#     synthesis = relationship('SynthesesORM', back_populates='synthesis_recipes')
-#     substance = relationship('SubstancesORM', back_populates='synthesis_recipes')
+class Substances_SynthesesORM(Base):
+    __tablename__ = 'synthesis_recipe'
+
+    synthesis_id: Mapped[int] = mapped_column(ForeignKey('syntheses.id'), primary_key=True)
+    substance_id: Mapped[int] = mapped_column(ForeignKey('substance.id'), primary_key=True)
+    percentage: Mapped[int]
+
+    syntheses: Mapped["SynthesesORM"] = relationship(back_populates='syntheses_associations')
+    substance: Mapped["SubstancesORM"] = relationship(back_populates='substance_associations')
+
+class SynthesesORM(Base):
+    __tablename__ = "syntheses"
+
+    name:Mapped[str] = mapped_column(unique=True)
+    discription:Mapped[str]
+
+    substances = relationship(secondary="synthesis_recipe", back_populates='synthesis')
+    substance_associations: Mapped[list["Substunces_SynthesesORM"]] = relationship(back_populates="syntheses")
+
+class SubstancesORM(Base):
+    __tablename__ = "substances"
+
+    name: Mapped[str] = mapped_column(unique=True)
+    weight: Mapped[float]
+    category_id: Mapped[str] = mapped_column(ForeignKey("substance_category.id"))
+
+    category: Mapped["SubstanceCategoryORM"] = relationship(back_populates="substances")
+    synthesis = relationship(secondary="synthesis_recipe", back_populates='substances')
+    syntheses_associations: Mapped[list["Substunces_SynthesesORM"]] =relationship(back_populates="substance")

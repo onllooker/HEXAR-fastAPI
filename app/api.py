@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Query, HTTPException, Depends
-from pydantic import BaseModel
 import logging
 from database import async_engine, SessionDep
 from db_models import *
