@@ -42,8 +42,8 @@ class SynthesesORM(Base):
     name:Mapped[str] = mapped_column(unique=True)
     discription:Mapped[str]
 
-    substances: Mapped[list["SubstancesORM"]] = relationship(secondary="synthesis_recipe", back_populates="syntheses")
-    substance_associations: Mapped[list["Substunces_SynthesesORM"]] = relationship(back_populates="syntheses")
+    substances: Mapped[list["SubstancesORM"]] = relationship(secondary="synthesis_recipe", back_populates="synthesis")
+    substance_associations: Mapped[list["Substances_SynthesesORM"]] = relationship(back_populates="syntheses")
 
 class SubstancesORM(Base):
     __tablename__ = "substances"
@@ -53,5 +53,5 @@ class SubstancesORM(Base):
     category_id: Mapped[int] = mapped_column(ForeignKey("substance_category.id"))
 
     category: Mapped["SubstanceCategoryORM"] = relationship(back_populates="substances")
-    synthesis = relationship(secondary="synthesis_recipe", back_populates='substances')
-    syntheses_associations: Mapped[list["Substunces_SynthesesORM"]] =relationship(back_populates="substance")
+    synthesis: Mapped[list["SynthesesORM"]] = relationship(secondary="synthesis_recipe", back_populates='substances')
+    syntheses_associations: Mapped[list["Substances_SynthesesORM"]] =relationship(back_populates="substance")
