@@ -1,7 +1,8 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue
 from sqlalchemy import select
 
 from app.database import SessionDep, async_engine
@@ -11,6 +12,14 @@ from app.schemas import SubstanceCategoryCreateScheme, SubstanceCreateScheme
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with async_engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    yield
+
 
 app = FastAPI(title="Reactor Monitoring System")
 
@@ -96,7 +105,7 @@ def stop_synthesis():
 
 # Эндпоинты для получения текущих параметров
 @app.get("/status/")
-def get_current_status():
+def get_current_status() -> JsonValue:
     try:
         # Пример статуса синтеза
         return {"status": "Running", "temperature": 75}
@@ -114,12 +123,6 @@ def get_alarms_by_severity(severity_level: str):
     except Exception as e:
         logger.error(f"Error fetching alarms: {e}")
         raise HTTPException(status_code=500, detail="Error fetching alarms")
-
-
-@app.on_event("startup")
-async def on_startup():
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 
 @app.post("/make_new_synthesis")
