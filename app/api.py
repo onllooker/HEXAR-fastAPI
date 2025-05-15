@@ -1,10 +1,18 @@
-from fastapi import FastAPI, Query, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 import logging
-from database import async_engine, SessionDep
-from db_models import *
-from sqlalchemy import select
-from schemas import *
 
+from sqlalchemy.util import await_only
+
+from app.database.database import async_engine, SessionDep
+from app.database.db_models import Base, SynthesesORM, SubstancesORM, SubstanceCategoryORM, SensorDataORM, Substances_SynthesesORM
+from sqlalchemy import select
+from schemas import (SubstanceScheme, SubstanceCreateScheme,
+                     SubstanceCategoryScheme, SubstanceCategoryCreateScheme,
+                     SynthesesScheme, SynthesesCreateScheme,
+                     AlarmCreateScheme, AlarmScheme)
+from crud import (add_substance_category, add_substance,
+                  get_substance_category, get_substance,
+                  get_recipes_by_substance, get_list_recipes, get_recipes_by_synthesis)
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -13,24 +21,36 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title='Reactor Monitoring System')
 
 
-# Модели для FastAPI (Pydantic)
-class SynthesisCreate(BaseModel):
-    id: int
-    name: str
-    start_time: str
-    end_time: str
-    status: str
-    temperature: int
+@app.post("/add_substance_category", summary="Add new category", tags=["Categories rout"], response_model=SubstanceCategoryScheme)
+async def api_add_substance_category(scheme: SubstanceCategoryCreateScheme, session: SessionDep):
+    return await add_substance_category(session, scheme.category_name, scheme.description)
 
 
-class AlarmCreate(BaseModel):
-    id: int
-    message: str
-    timestamp: str
+@app.get("/get_substance_category", summary="Get all categories", tags=["Categories rout"], response_model=SubstanceCategoryScheme)
+async def api_get_substance_category(session: SessionDep):
+    return await get_substance_category(session = session)
 
 
-# Получение всех синтезов
-@app.get("/syntheses/", response_model=list[SynthesisCreate])
+@app.post("/add_substance", summary='Add substances description', tags=['Substances routs'], response_model=SubstanceScheme)
+async def api_add_substance(substance: SubstanceCreateScheme, session: SessionDep):
+   return await add_substance(session, name=substance.name, weight=substance.weight, category_id=substance.category_id)
+
+@app.get("/get_substance/", summary='Get substances description', tags=['Substances routs'])
+async def api_get_substance(session: SessionDep):
+    return await get_substance(session = session)
+
+@app.post("/syntheses/")
+def create_synthesis(synthesis: SynthesesCreateScheme) -> SynthesesCreateScheme:
+    try:
+
+        logger.info(f"Synthesis {synthesis.id} created successfully")
+        return {"message":"Success"}
+    except Exception as e:
+        logger.error(f"Error creating synthesis: {e}")
+        raise HTTPException(status_code=500, detail="Error creating synthesis")
+
+
+@app.get("/syntheses/", response_model=list[SynthesesCreateScheme])
 def get_syntheses():
     try:
         return ...
@@ -39,19 +59,10 @@ def get_syntheses():
         raise HTTPException(status_code=500, detail="Error fetching syntheses")
 
 
-# Создание нового синтеза
-@app.post("/syntheses/")
-def create_synthesis(synthesis: SynthesisCreate) -> SynthesisCreate:
-    try:
-        logger.info(f"Synthesis {synthesis.id} created successfully")
-        return synthesis
-    except Exception as e:
-        logger.error(f"Error creating synthesis: {e}")
-        raise HTTPException(status_code=500, detail="Error creating synthesis")
 
 
 # Получение всех аварий
-@app.get("/alarms/", response_model=list[AlarmCreate])
+@app.get("/alarms/", response_model=list[AlarmCreateScheme])
 def get_alarms():
     try:
         return ...
@@ -61,8 +72,8 @@ def get_alarms():
 
 
 # Создание новой аварии
-@app.post("/alarms/", response_model=AlarmCreate)
-def create_alarm(alarm: AlarmCreate):
+@app.post("/alarms/", response_model=AlarmCreateScheme)
+def create_alarm(alarm: AlarmScheme):
     try:
         logger.info(f"Alarm {alarm.id} created successfully")
         return alarm
@@ -104,7 +115,7 @@ def get_current_status():
 
 
 # Эндпоинт для получения аварий по критериям
-@app.get("/alarms/{severity_level}", response_model=list[AlarmCreate])
+@app.get("/alarms/{severity_level}", response_model=list[AlarmCreateScheme])
 def get_alarms_by_severity(severity_level: str):
     try:
         # Пример фильтрации по критичности
@@ -122,57 +133,17 @@ async def on_startup():
 
 @app.post("/make_new_synthesis")
 async def make_new_synthesis():
-    """Make a new table for synthesis template"""
     return {"message": "i am alive"}
 
 
-@app.post("/add_substance", summary='Add substances description', tags=['Substances routs'])
-async def add_substance(substance: SubstanceCreateScheme, session: SessionDep):
-    try:
-        result = await session.execute(
-            select(SubstanceCategoryORM).where(SubstanceCategoryORM.id == substance.category_id)
-        )
-        substance_category = result.scalars().first()
-        if not substance_category:
-            raise HTTPException(status_code=404, detail="Class not found")
-        new_substance = SubstancesORM(
-            name=substance.name,
-            weight=substance.weight,
-            category_id=substance.category_id
-        )
-        session.add(new_substance)
-        await session.commit()
-    except:
-        return {"message": "Fail commit!"}
+@app.get("/list_recipes", summary="Get all recipes", tags=["Recipes routs"])
+async def api_get_list_recipes(session: SessionDep):
+    return await get_list_recipes(session=session)
 
+@app.get("/by-synthesis/{synthesis_id", summary="Get recipes by synthesis_id", tags=["Recipes routs"])
+async def api_get_recipes_by_synthesis(session: SessionDep):
+    return await get_recipes_by_synthesis(session=session)
 
-@app.get("/get_substance/", summary='Get substances description', tags=['Substances routs'])
-async def get_substance(session: SessionDep):
-    try:
-        query = select(SubstancesORM)
-        res = await session.execute(query)
-        return res.scalars().all()
-    except:
-        await session.rollback()
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-@app.post("/add_substance_category", summary="Add new category", tags=["Categories rout"])
-async def add_substance_category(scheme: SubstanceCategoryCreateScheme, session: SessionDep):
-    try:
-        new_category = SubstanceCategoryORM(
-            category_name=scheme.category_name,
-            description=scheme.description
-        )
-        session.add(new_category)
-        await session.commit()
-    except:
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-@app.get("/get_substance_category", summary="Get all categories", tags=["Categories rout"])
-async def get_substance_category(session: SessionDep):
-    try:
-        query = select(SubstanceCategoryORM)
-        res = await session.execute(query)
-        return res.scalars().all()
-    except:
-        raise HTTPException(status_code=500, detail="Internal server error")
+@app.get("/by-substance/{substance_id}", summary="Get recipes by substance_id", tags=["Recipes routs"])
+async def api_get_recipes_by_substance(session: SessionDep):
+    return await get_recipes_by_substance(session=session)
