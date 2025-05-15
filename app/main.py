@@ -1,4 +1,4 @@
 import uvicorn
 
-if __name__ == '__main__':
-    uvicorn.run('api.api:app', reload=True)
+if __name__ == "__main__":
+    uvicorn.run("api:app", reload=True)
