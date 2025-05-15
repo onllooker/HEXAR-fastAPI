@@ -41,10 +41,10 @@ class AlarmCreate(BaseModel):
 
 
 # Получение всех синтезов
-@app.get("/syntheses/", response_model=list[SynthesisCreate])
-def get_syntheses():
+@app.get("/syntheses/")
+def get_syntheses() -> list[SynthesisCreate]:
     try:
-        return ...
+        raise NotImplementedError("This feature is not implemented yet")
     except Exception as e:
         logger.error(f"Error fetching syntheses: {e}")
         raise HTTPException(status_code=500, detail="Error fetching syntheses")
@@ -62,18 +62,18 @@ def create_synthesis(synthesis: SynthesisCreate) -> SynthesisCreate:
 
 
 # Получение всех аварий
-@app.get("/alarms/", response_model=list[AlarmCreate])
-def get_alarms():
+@app.get("/alarms/")
+def get_alarms() -> list[AlarmCreate]:
     try:
-        return ...
+        raise NotImplementedError("This feature is not implemented yet")
     except Exception as e:
         logger.error(f"Error fetching alarms: {e}")
         raise HTTPException(status_code=500, detail="Error fetching alarms")
 
 
 # Создание новой аварии
-@app.post("/alarms/", response_model=AlarmCreate)
-def create_alarm(alarm: AlarmCreate):
+@app.post("/alarms/")
+def create_alarm(alarm: AlarmCreate) -> AlarmCreate:
     try:
         logger.info(f"Alarm {alarm.id} created successfully")
         return alarm
@@ -84,7 +84,7 @@ def create_alarm(alarm: AlarmCreate):
 
 # Команды для управления синтезом
 @app.post("/control/start/")
-def start_synthesis():
+def start_synthesis() -> JsonValue:
     try:
         logger.info("Starting synthesis process...")
         return {"message": "Synthesis started successfully"}
@@ -94,7 +94,7 @@ def start_synthesis():
 
 
 @app.post("/control/stop/")
-def stop_synthesis():
+def stop_synthesis() -> JsonValue:
     try:
         logger.info("Stopping synthesis process...")
         return {"message": "Synthesis stopped successfully"}
@@ -115,11 +115,11 @@ def get_current_status() -> JsonValue:
 
 
 # Эндпоинт для получения аварий по критериям
-@app.get("/alarms/{severity_level}", response_model=list[AlarmCreate])
-def get_alarms_by_severity(severity_level: str):
+@app.get("/alarms/{severity_level}")
+def get_alarms_by_severity(severity_level: str) -> list[AlarmCreate]:
     try:
         # Пример фильтрации по критичности
-        return ...
+        raise NotImplementedError("This feature is not implemented yet")
     except Exception as e:
         logger.error(f"Error fetching alarms: {e}")
         raise HTTPException(status_code=500, detail="Error fetching alarms")
