@@ -1,11 +1,12 @@
 import logging
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 
 from app.database import SessionDep, async_engine
-from app.db_models import *
-from app.schemas import *
+from app.db_models import Base, SubstanceCategoryORM, SubstancesORM
+from app.schemas import SubstanceCategoryCreateScheme, SubstanceCreateScheme
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -141,7 +142,7 @@ async def add_substance(substance: SubstanceCreateScheme, session: SessionDep):
         )
         session.add(new_substance)
         await session.commit()
-    except:
+    except Exception:
         return {"message": "Fail commit!"}
 
 
@@ -151,7 +152,7 @@ async def get_substance(session: SessionDep):
         query = select(SubstancesORM)
         res = await session.execute(query)
         return res.scalars().all()
-    except:
+    except Exception:
         await session.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -162,7 +163,7 @@ async def add_substance_category(scheme: SubstanceCategoryCreateScheme, session:
         new_category = SubstanceCategoryORM(category_name=scheme.category_name, description=scheme.description)
         session.add(new_category)
         await session.commit()
-    except:
+    except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -172,5 +173,5 @@ async def get_substance_category(session: SessionDep):
         query = select(SubstanceCategoryORM)
         res = await session.execute(query)
         return res.scalars().all()
-    except:
+    except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
