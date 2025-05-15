@@ -1,10 +1,11 @@
 import logging
 
-from database import SessionDep, async_engine
-from db_models import *
 from fastapi import FastAPI, HTTPException
-from schemas import *
 from sqlalchemy import select
+
+from app.database import SessionDep, async_engine
+from app.db_models import *
+from app.schemas import *
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
