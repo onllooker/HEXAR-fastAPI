@@ -6,6 +6,7 @@ from sqlalchemy import select
 from typing import List
 from app.schemas.substances_category_schema import SubstanceCategoryCreateSchema, SubstanceCategoryReadSchema
 from .utils import get_by_id
+
 async def add_substance_category(session: AsyncSession, schema: SubstanceCategoryCreateSchema)->SubstanceCategoryReadSchema:
     new_category = SubstanceCategoryORM(
         category_name=schema.category_name,

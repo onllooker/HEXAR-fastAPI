@@ -43,6 +43,10 @@ class SynthesesORM(Base):
     substances: Mapped[list["SubstancesORM"]] = relationship(secondary="synthesis_recipe", back_populates="synthesis")
     substance_associations: Mapped[list["Substances_SynthesesORM"]] = relationship(back_populates="syntheses")
 
+    @property
+    def recipe(self):
+        return self.substance_associations
+
 class SubstancesORM(Base):
     __tablename__ = "substances"
 
