@@ -1,29 +1,33 @@
 from typing import List
+
 from fastapi import APIRouter
-from app.database.db_models import SynthesesORM, SubstancesORM, Substances_SynthesesORM
-from app.database.db_config import SessionDep
-from app.schemas.substances_category_schema import *
-from sqlalchemy import select
+
 from app.CRUD.synthesis_crud import add_synthesis, get_syntheses
-from app.schemas.synthesis_schema import SynthesisReadSchema, SynthesisCreateSchema
+from app.database.db_config import SessionDep
+from app.schemas.synthesis_schema import SynthesisCreateSchema, SynthesisReadSchema
 
 syntheses_router = APIRouter(prefix="/syntheses", tags=["Syntheses"])
 
+
 @syntheses_router.post("/", response_model=SynthesisReadSchema)
-async def api_add_synthesis(schema:SynthesisCreateSchema, session:SessionDep):
+async def api_add_synthesis(schema: SynthesisCreateSchema, session: SessionDep):
     return await add_synthesis(session=session, schema=schema)
 
+
 @syntheses_router.get("/", response_model=List[SynthesisReadSchema])
-async def api_get_syntheses(session:SessionDep):
+async def api_get_syntheses(session: SessionDep):
     return await get_syntheses(session=session)
+
 
 @syntheses_router.patch("/{synthesis_id}")
 async def api_update_synthesis():
     pass
 
+
 @syntheses_router.delete("/{synthesis_id}")
-async def api_delete_substance_from_synthesis(synthesis_id:int):
+async def api_delete_substance_from_synthesis(synthesis_id: int):
     pass
+
 
 # @syntheses_router.post("/", response_model=SynthesesScheme)
 # async def create_synthesis(
@@ -115,7 +119,10 @@ async def api_delete_substance_from_synthesis(synthesis_id:int):
 #               for a in synth.substance_associations]
 #     return SynthesisRead(id=synth.id, name=synth.name, description=synth.description, recipe=recipe)
 #
-# @syntheses_router.patch("/{synthesis_id}", response_model=SynthesisRead, description="Частичное обновление синтеза: имя/описание и/или добавление новых веществ")
+# @syntheses_router.patch(
+#     "/{synthesis_id}",
+#     response_model=SynthesisRead,
+#     description="Частичное обновление синтеза: имя/описание и/или добавление новых веществ")
 # async def update_synthesis(
 #     synthesis_id: int,
 #     payload: SynthesisPatch,
