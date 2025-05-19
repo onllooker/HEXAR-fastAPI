@@ -20,3 +20,35 @@ dev = [
     "pytest-asyncio>=0.26.0",
     "httpx>=0.28.1",
 ]
+
+[tool.flake8]
+max-line-length = 150
+ignore = [
+    "E203",
+]
+
+[tool.black]
+line-length = 150
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
+
+[tool.mypy]
+no_implicit_optional = true
+disable_error_code = [
+  "import-untyped",
+]
+pretty = true
+check_untyped_defs = true
+allow_subclassing_any = true
+
+[tool.autoflake]
+remove_all_unused_imports = true
+ignore_init_module_imports = true
+in_place = true

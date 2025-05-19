@@ -1,17 +1,21 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.database.db_models import SubstanceCategoryORM
+from typing import List
+
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from typing import List
-from app.schemas.substances_category_schema import SubstanceCategoryCreateSchema, SubstanceCategoryReadSchema
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database.db_models import SubstanceCategoryORM
+from app.schemas.substances_category_schema import (
+    SubstanceCategoryCreateSchema,
+    SubstanceCategoryReadSchema,
+)
+
 from .utils import get_by_id
 
-async def add_substance_category(session: AsyncSession, schema: SubstanceCategoryCreateSchema)->SubstanceCategoryReadSchema:
-    new_category = SubstanceCategoryORM(
-        category_name=schema.category_name,
-        description=schema.description
-    )
+
+async def add_substance_category(session: AsyncSession, schema: SubstanceCategoryCreateSchema) -> SubstanceCategoryReadSchema:
+    new_category = SubstanceCategoryORM(category_name=schema.category_name, description=schema.description)
     try:
         session.add(new_category)
         await session.commit()
@@ -20,11 +24,12 @@ async def add_substance_category(session: AsyncSession, schema: SubstanceCategor
     except IntegrityError:
         await session.rollback()
         raise HTTPException(400, "Category with this name already exists.")
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         await session.rollback()
         raise HTTPException(500, "Internal database error.")
 
-async def get_substance_category(session: AsyncSession)->List[SubstanceCategoryReadSchema]:
+
+async def get_substance_category(session: AsyncSession) -> List[SubstanceCategoryReadSchema]:
     try:
         query = select(SubstanceCategoryORM)
         result = await session.execute(query)
@@ -32,19 +37,14 @@ async def get_substance_category(session: AsyncSession)->List[SubstanceCategoryR
         return [SubstanceCategoryReadSchema.model_validate(category) for category in categories]
     except SQLAlchemyError as e:
         await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 
-async def delete_substance_category(session:AsyncSession, category_id: int):
+
+async def delete_substance_category(session: AsyncSession, category_id: int):
     category = await get_by_id(session, SubstanceCategoryORM, category_id)
     try:
         await session.delete(category)
         await session.commit()
     except SQLAlchemyError as e:
         await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")

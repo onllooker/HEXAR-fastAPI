@@ -1,18 +1,29 @@
-from fastapi import FastAPI, HTTPException
 import logging
-from app.database.db_config import async_engine, SessionDep
-from app.database.db_models import Base, SynthesesORM, SubstancesORM, SubstanceCategoryORM, SensorDataORM, Substances_SynthesesORM
-from .alarm import alarm_router
-from .syntheses import syntheses_router
-from .substnces import substances_router
-from .substance_category import substances_category_router
+from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+
+from app.database.db_config import async_engine
+from app.database.db_models import Base
+
+from .alarm import alarm_router
+from .substance_category import substances_category_router
+from .substnces import substances_router
+from .syntheses import syntheses_router
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title='Reactor Monitoring System')
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        yield
+
+
+app = FastAPI(title="Reactor Monitoring System", lifespan=lifespan)
 app.include_router(substances_category_router)
 app.include_router(substances_router)
 app.include_router(syntheses_router)
@@ -122,12 +133,6 @@ app.include_router(alarm_router)
 #         logger.error(f"Error fetching alarms: {e}")
 #         raise HTTPException(status_code=500, detail="Error fetching alarms")
 #
-
-@app.on_event("startup")
-async def on_startup():
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
 #
 # @app.post("/make_new_synthesis")
 # async def make_new_synthesis():
