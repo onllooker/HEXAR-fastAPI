@@ -48,6 +48,7 @@ class SubstancesORM(Base):
 
     name: Mapped[str] = mapped_column(unique=True)
     weight: Mapped[float]
+    description: Mapped[str]
     category_id: Mapped[int] = mapped_column(ForeignKey("substance_category.id"))
 
     category: Mapped["SubstanceCategoryORM"] = relationship(back_populates="substances")
